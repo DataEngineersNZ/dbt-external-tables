@@ -1,4 +1,4 @@
-{% macro is_csv(file_format) %}
+{% macro is_csv(file_format, database = target.database) %}
 
 {# From https://docs.snowflake.net/manuals/sql-reference/sql/create-external-table.html:
 
@@ -35,9 +35,9 @@ you should only specify one or the other when creating an external table.
         {% if fqn | length == 3 %}
             {% set ff_database, ff_schema, ff_identifier = fqn[0], fqn[1], fqn[2] %}
         {% elif fqn | length == 2 %}
-            {% set ff_database, ff_schema, ff_identifier = target.database, fqn[0], fqn[1] %}
+            {% set ff_database, ff_schema, ff_identifier = database, fqn[0], fqn[1] %}
         {% else %}
-            {% set ff_database, ff_schema, ff_identifier = target.database, target.schema, fqn[0] %}
+            {% set ff_database, ff_schema, ff_identifier = database, target.schema, fqn[0] %}
         {% endif %}
     
         {% call statement('get_file_format', fetch_result = True) %}
