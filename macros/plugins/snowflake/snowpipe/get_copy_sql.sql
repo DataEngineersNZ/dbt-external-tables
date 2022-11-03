@@ -1,4 +1,4 @@
-{% macro snowflake_get_copy_sql(relation, source_node, explicit_transaction=false) %}
+{% macro snowflake__get_copy_sql(relation, source_node, explicit_transaction=false) %}
 {# This assumes you have already created an external stage #}
 
     {%- set columns = source_node.columns.values() -%}
@@ -26,9 +26,9 @@
             metadata$filename::varchar as metadata_filename,
             metadata$file_row_number::bigint as metadata_file_row_number,
             current_timestamp::timestamp as _dbt_copied_at
-        from {{external.location}} {# stage #}
+        from {{external.location | replace("@", "@" ~ relation.database ~ ".")}} {# stage #}
     )
-    file_format = {{external.file_format}}
+    file_format = {{relation.database ~ "." ~ external.file_format}}
     {% if external.pattern -%} pattern = '{{external.pattern}}' {%- endif %}
     {% if copy_options %} {{copy_options}} {% endif %};
     
