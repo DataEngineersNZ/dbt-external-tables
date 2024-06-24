@@ -1,14 +1,14 @@
-{% macro snowflake_get_copy_sql(source_node, explicit_transaction=false) %}
+{% macro snowflake__get_copy_sql(relation, source_node, explicit_transaction=false) %}
 {# This assumes you have already created an external stage #}
 
     {%- set columns = source_node.columns.values() -%}
     {%- set external = source_node.external -%}
-    {%- set is_csv = dbt_external_tables.is_csv(external.file_format) %}
+    {%- set is_csv = dbt_external_tables.is_csv(external.file_format, relation.database) %}
     {%- set copy_options = external.snowpipe.get('copy_options', none) -%}
    
     {%- if explicit_transaction -%} begin; {%- endif %}
     
-    copy into {{source(source_node.source_name, source_node.name)}}
+    copy into {{ relation.include(database=(not temporary), schema=(not temporary)) }}
     from ( 
         select
         {% if columns|length == 0 %}
@@ -26,9 +26,9 @@
             metadata$filename::varchar as metadata_filename,
             metadata$file_row_number::bigint as metadata_file_row_number,
             current_timestamp::timestamp as _dbt_copied_at
-        from {{external.location}} {# stage #}
+        from {{external.location | replace("@", "@" ~ relation.database ~ ".")}} {# stage #}
     )
-    file_format = {{external.file_format}}
+    file_format = {{relation.database ~ "." ~ external.file_format}}
     {% if external.pattern -%} pattern = '{{external.pattern}}' {%- endif %}
     {% if copy_options %} {{copy_options}} {% endif %};
     
